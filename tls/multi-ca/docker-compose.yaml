@@ -1,0 +1,36 @@
+version: "3"
+
+
+services:
+  certgen:
+    build: .
+    volumes:
+     - './certs:/opt/certs'
+
+  mongo-server:
+    depends_on:
+      - certgen
+    image: mongo:3.4.9
+    command:
+      - '--sslMode'
+      - 'requireSSL'
+      - '--sslPEMKeyFile'
+      - '/opt/certs/client2.pem'
+      - '--sslCAFile'
+      - '/opt/certs/root-combined.crt.pem'
+    volumes:
+      - './certs:/opt/certs:ro'
+
+  mongo-client:
+    depends_on:
+      - certgen
+      - mongo-server
+    image: mongo:3.4.9
+    command:
+      - 'bash'
+      - '-c'
+      - 'while true; do sleep 5; done'
+    links:
+      - 'mongo-server:client1.mock.ca'
+    volumes:
+      - './certs:/opt/certs:ro'
